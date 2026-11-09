@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-paper: #f7f5ef;
+  --color-paper-deep: #efece3;
+  --color-ink: #141311;
+  --color-muted: #6f6a60;
+  --color-line: #d9d4c8;
+  --color-accent: #d7263d;
+  --color-accent-soft: #f3d9dc;
+
+  --font-sans:
+    'Inter Variable', 'Noto Sans Thai Variable', system-ui, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-serif:
+    'Newsreader Variable', 'Noto Serif Thai Variable', 'Iowan Old Style', 'Palatino Linotype', Palatino,
+    Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+html[lang='th'] {
+  --font-serif: 'Noto Serif Thai Variable', 'Newsreader Variable', Georgia, serif;
+  --font-sans: 'Noto Sans Thai Variable', 'Inter Variable', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
