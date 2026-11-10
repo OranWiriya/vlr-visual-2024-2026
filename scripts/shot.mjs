@@ -1,9 +1,17 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-const chrome = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+const chrome =
+  process.env.CHROME_PATH ??
+  (process.platform === 'win32'
+    ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    : process.platform === 'darwin'
+      ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+      : '/usr/bin/google-chrome')
 const port = 9333
-const userData = 'C:/Users/ORAN/AppData/Local/Temp/opencode/chrome-cdp'
+const userData = join(tmpdir(), 'vlr-visual-chrome-cdp')
 const targetUrl = process.argv[2] ?? 'http://localhost:5199/'
 const selector = process.argv[3] ?? ''
 const out = process.argv[4] ?? '.shots/shot.png'
