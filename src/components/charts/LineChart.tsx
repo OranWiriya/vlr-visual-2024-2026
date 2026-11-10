@@ -8,6 +8,7 @@ import {
 } from 'd3'
 import { useI18n } from '../../i18n'
 import { rate, type Patch, type TimelinePoint } from '../../lib/story'
+import { useElementWidth } from '../../lib/useElementWidth'
 import { useInView, useReducedMotion } from '../../lib/useInView'
 
 type Series = {
@@ -64,10 +65,16 @@ export function LineChart({
   const reduced = useReducedMotion()
   const animate = inView || reduced
 
-  const width = 960
-  const margin = { top: 56, right: 142, bottom: 72, left: 54 }
+  const { ref: widthRef, width: measuredWidth } = useElementWidth<HTMLDivElement>()
+  const designWidth = 960
+  const compact = measuredWidth > 0 && measuredWidth < 620
+  const width = compact ? measuredWidth : designWidth
+  const chartHeight = compact ? 320 : height
+  const margin = compact
+    ? { top: 50, right: 76, bottom: 68, left: 40 }
+    : { top: 56, right: 142, bottom: 72, left: 54 }
   const innerW = width - margin.left - margin.right
-  const innerH = height - margin.top - margin.bottom
+  const innerH = chartHeight - margin.top - margin.bottom
 
   const { x, y, linePath, endLabels } = useMemo(() => {
     const times = points.map((point) => new Date(point.date).getTime())
@@ -98,10 +105,15 @@ export function LineChart({
       })
       .sort((a, b) => a.y - b.y)
 
+    const endLabelGap = compact ? 14 : 19
     let previous = -Infinity
     for (const label of labels) {
-      if (label.y - previous < 19) label.y = previous + 19
+      if (label.y - previous < endLabelGap) label.y = previous + endLabelGap
       previous = label.y
+    }
+    const overflow = labels.length > 0 ? labels[labels.length - 1].y - innerH : 0
+    if (overflow > 0) {
+      for (const label of labels) label.y -= overflow
     }
 
     return {
@@ -110,18 +122,29 @@ export function LineChart({
       linePath: (key: string) => paths.find((path) => path.key === key)?.d ?? '',
       endLabels: labels,
     }
-  }, [points, series, innerW, innerH, yMax])
+  }, [points, series, innerW, innerH, yMax, compact])
 
   const yTicks = [0, 25, 50, 75, 100]
   const yearTicks = [2024, 2025, 2026].map((year) => new Date(`${year}-01-01`))
   const yearFormat = timeFormat('%Y')
 
+  const eventPoints = points.filter((point) => EVENT_LABELS[point.id])
+  const visibleEventPoints =
+    innerW < 380
+      ? eventPoints.filter(
+          (_, index) =>
+            index === 0 ||
+            index === Math.floor(eventPoints.length / 2) ||
+            index === eventPoints.length - 1,
+        )
+      : eventPoints
+
   return (
     <figure ref={ref} className={`min-w-0 ${className}`}>
-      <div className="w-full min-w-0 overflow-x-auto pb-1">
+      <div ref={widthRef} className="w-full min-w-0 pb-1">
         <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-auto w-full min-w-[720px]"
+          viewBox={`0 0 ${width} ${chartHeight}`}
+          className="h-auto w-full"
           role="img"
           aria-label={ariaLabel}
         >
@@ -181,19 +204,17 @@ export function LineChart({
               />
             ))}
 
-            {points
-              .filter((point) => EVENT_LABELS[point.id])
-              .map((point, index) => (
-                <text
-                  key={point.id}
-                  x={x(new Date(point.date))}
-                  y={innerH + (index % 2 === 0 ? 42 : 56)}
-                  textAnchor="middle"
-                  className="fill-muted text-[10px]"
-                >
-                  {EVENT_LABELS[point.id]}
-                </text>
-              ))}
+            {visibleEventPoints.map((point, index) => (
+              <text
+                key={point.id}
+                x={x(new Date(point.date))}
+                y={innerH + (index % 2 === 0 ? 42 : 56)}
+                textAnchor="middle"
+                className="fill-muted text-[10px]"
+              >
+                {EVENT_LABELS[point.id]}
+              </text>
+            ))}
 
             {points
               .filter((point) => point.kind === 'regional')
@@ -322,20 +343,23 @@ export function LineChart({
                 opacity={animate ? 1 : 0}
                 style={{ transition: 'opacity 700ms ease 1200ms' }}
               >
+                {compact ? null : (
+                  <text
+                    x={label.x + 12}
+                    y={label.y}
+                    dominantBaseline="middle"
+                    className="text-[11px] font-semibold"
+                    fill={label.color}
+                  >
+                    {label.label}
+                  </text>
+                )}
                 <text
                   x={label.x + 12}
-                  y={label.y}
+                  y={compact ? label.y : label.y + 13}
                   dominantBaseline="middle"
-                  className="text-[11px] font-semibold"
-                  fill={label.color}
-                >
-                  {label.label}
-                </text>
-                <text
-                  x={label.x + 12}
-                  y={label.y + 13}
-                  dominantBaseline="middle"
-                  className="fill-muted text-[10px]"
+                  className={compact ? 'text-[10px] font-semibold' : 'fill-muted text-[10px]'}
+                  fill={compact ? label.color : undefined}
                 >
                   {label.value.toFixed(0)}%
                 </text>
@@ -401,10 +425,6 @@ export function LineChart({
           </span>
         ) : null}
       </div>
-
-      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted sm:hidden">
-        {t.charts.swipeTimeline}
-      </p>
 
       {caption ? (
         <figcaption className="mt-3 text-[12px] leading-relaxed text-muted">

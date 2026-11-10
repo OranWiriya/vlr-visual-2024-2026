@@ -1,6 +1,7 @@
 import { scaleLinear } from 'd3'
 import { useI18n } from '../../i18n'
 import { constants } from '../../lib/story'
+import { useElementWidth } from '../../lib/useElementWidth'
 import { useInView, useReducedMotion } from '../../lib/useInView'
 
 export function ConstantsChart() {
@@ -11,9 +12,15 @@ export function ConstantsChart() {
   const reduced = useReducedMotion()
   const animate = inView || reduced
 
-  const width = 900
-  const height = 330
-  const margin = { top: 34, right: 44, bottom: 58, left: 88 }
+  const { ref: widthRef, width: measuredWidth } = useElementWidth<HTMLDivElement>()
+  const designWidth = 900
+  const baseHeight = 330
+  const compact = measuredWidth > 0 && measuredWidth < 560
+  const width = compact ? measuredWidth : designWidth
+  const height = compact ? 300 : baseHeight
+  const margin = compact
+    ? { top: 28, right: 30, bottom: 50, left: 64 }
+    : { top: 34, right: 44, bottom: 58, left: 88 }
   const innerW = width - margin.left - margin.right
   const innerH = height - margin.top - margin.bottom
 
@@ -37,10 +44,10 @@ export function ConstantsChart() {
         <p className="text-[11px] text-muted">{c6.chartSub}</p>
       </div>
 
-      <div className="w-full min-w-0 overflow-x-auto">
+      <div ref={widthRef} className="w-full min-w-0">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="h-auto w-full min-w-[620px]"
+          className="h-auto w-full"
           role="img"
           aria-label={c6.chartAria(summary)}
         >
@@ -158,10 +165,6 @@ export function ConstantsChart() {
           </g>
         </svg>
       </div>
-
-      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted sm:hidden">
-        {c6.swipeRange}
-      </p>
 
       <figcaption className="mt-3 text-[12px] leading-relaxed text-muted">
         {c6.chartRangeCaption}

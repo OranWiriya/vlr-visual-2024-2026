@@ -1,5 +1,5 @@
 import { scaleLinear } from 'd3'
-import { useI18n } from '../../i18n'
+import { useElementWidth } from '../../lib/useElementWidth'
 import { useInView, useReducedMotion } from '../../lib/useInView'
 
 export type SlopeEntry = {
@@ -43,19 +43,24 @@ export function SlopeChart({
   ariaLabel,
   caption,
 }: SlopeChartProps) {
-  const { t } = useI18n()
   const { ref, inView } = useInView<HTMLElement>(0.3)
   const reduced = useReducedMotion()
   const animate = inView || reduced
 
-  const width = 760
-  const height = big ? 360 : 440
-  const margin = { top: 78, right: 150, bottom: 54, left: 120 }
+  const { ref: widthRef, width: measuredWidth } = useElementWidth<HTMLDivElement>()
+  const designWidth = 760
+  const baseHeight = big ? 360 : 440
+  const compact = measuredWidth > 0 && measuredWidth < 560
+  const width = compact ? measuredWidth : designWidth
+  const chartHeight = compact ? (big ? 300 : 340) : baseHeight
+  const margin = compact
+    ? { top: 64, right: 86, bottom: 36, left: 76 }
+    : { top: 78, right: 150, bottom: 54, left: 120 }
   const innerW = width - margin.left - margin.right
-  const innerH = height - margin.top - margin.bottom
+  const innerH = chartHeight - margin.top - margin.bottom
 
-  const xLeft = 80
-  const xRight = innerW - 80
+  const xLeft = compact ? 24 : 80
+  const xRight = innerW - (compact ? 24 : 80)
   const y = scaleLinear().domain([0, 100]).range([innerH, 0])
 
   const yTicks = [0, 25, 50, 75, 100]
@@ -71,23 +76,27 @@ export function SlopeChart({
 
   return (
     <figure ref={ref} className="w-full min-w-0">
-      <div className="w-full min-w-0 overflow-x-auto pb-1">
+      <div ref={widthRef} className="w-full min-w-0 pb-1">
         <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-auto w-full min-w-[620px]"
+          viewBox={`0 0 ${width} ${chartHeight}`}
+          className="h-auto w-full"
           role="img"
           aria-label={ariaLabel}
         >
           <g transform={`translate(${margin.left},${margin.top})`}>
             <text
-              x={xLeft}
-              y={-42}
-              textAnchor="middle"
-              className="fill-muted text-[10px] font-semibold uppercase tracking-[0.16em]"
+              x={compact ? 0 : xLeft}
+              y={compact ? -36 : -42}
+              textAnchor={compact ? 'start' : 'middle'}
+              className={
+                compact
+                  ? 'fill-muted text-[9px] font-semibold uppercase'
+                  : 'fill-muted text-[10px] font-semibold uppercase tracking-[0.16em]'
+              }
             >
               {leftLabel}
             </text>
-            {leftSub ? (
+            {leftSub && !compact ? (
               <text
                 x={xLeft}
                 y={-28}
@@ -99,14 +108,18 @@ export function SlopeChart({
             ) : null}
 
             <text
-              x={xRight}
-              y={-42}
-              textAnchor="middle"
-              className="fill-muted text-[10px] font-semibold uppercase tracking-[0.16em]"
+              x={compact ? innerW : xRight}
+              y={compact ? -14 : -42}
+              textAnchor={compact ? 'end' : 'middle'}
+              className={
+                compact
+                  ? 'fill-muted text-[9px] font-semibold uppercase'
+                  : 'fill-muted text-[10px] font-semibold uppercase tracking-[0.16em]'
+              }
             >
               {rightLabel}
             </text>
-            {rightSub ? (
+            {rightSub && !compact ? (
               <text
                 x={xRight}
                 y={-28}
@@ -117,7 +130,7 @@ export function SlopeChart({
               </text>
             ) : null}
 
-            {patch ? (
+            {patch && !compact ? (
               <g>
                 <text
                   x={innerW / 2}
@@ -304,10 +317,6 @@ export function SlopeChart({
           </g>
         </svg>
       </div>
-
-      <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted sm:hidden">
-        {t.charts.swipeCompare}
-      </p>
 
       {caption ? (
         <figcaption className="mt-3 text-[12px] leading-relaxed text-muted">
