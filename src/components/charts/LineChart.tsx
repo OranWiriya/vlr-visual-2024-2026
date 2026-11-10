@@ -34,6 +34,7 @@ type LineChartProps = {
   height?: number
   yMax?: number
   area?: boolean
+  showAllEvents?: boolean
   ariaLabel: string
   caption?: string
   className?: string
@@ -48,6 +49,13 @@ const EVENT_LABELS: Record<string, string> = {
   'london-2026': 'London',
 }
 
+const ALL_EVENT_LABELS: Record<string, string> = {
+  ...EVENT_LABELS,
+  'shanghai-2024': 'Shanghai',
+  'champions-2024': 'Champions 2024',
+  'champions-2025': 'Champions 2025',
+}
+
 export function LineChart({
   points,
   series,
@@ -56,6 +64,7 @@ export function LineChart({
   height = 500,
   yMax = 100,
   area = false,
+  showAllEvents = false,
   ariaLabel,
   caption,
   className = '',
@@ -128,7 +137,8 @@ export function LineChart({
   const yearTicks = [2024, 2025, 2026].map((year) => new Date(`${year}-01-01`))
   const yearFormat = timeFormat('%Y')
 
-  const eventPoints = points.filter((point) => EVENT_LABELS[point.id])
+  const eventLabelMap = showAllEvents ? ALL_EVENT_LABELS : EVENT_LABELS
+  const eventPoints = points.filter((point) => eventLabelMap[point.id])
   const visibleEventPoints =
     innerW < 380
       ? eventPoints.filter(
@@ -138,6 +148,26 @@ export function LineChart({
             index === eventPoints.length - 1,
         )
       : eventPoints
+
+  const championPoints = showAllEvents
+    ? eventPoints.filter((point) => point.id.startsWith('champions-'))
+    : []
+  const masterPoints = showAllEvents
+    ? eventPoints.filter((point) => !point.id.startsWith('champions-'))
+    : []
+  const visibleMasterPoints: TimelinePoint[] = []
+  if (showAllEvents && compact) {
+    let lastX = -Infinity
+    for (const point of masterPoints) {
+      const pointX = x(new Date(point.date))
+      if (pointX - lastX >= 46) {
+        visibleMasterPoints.push(point)
+        lastX = pointX
+      }
+    }
+  } else {
+    visibleMasterPoints.push(...masterPoints)
+  }
 
   return (
     <figure ref={ref} className={`min-w-0 ${className}`}>
@@ -204,17 +234,44 @@ export function LineChart({
               />
             ))}
 
-            {visibleEventPoints.map((point, index) => (
-              <text
-                key={point.id}
-                x={x(new Date(point.date))}
-                y={innerH + (index % 2 === 0 ? 42 : 56)}
-                textAnchor="middle"
-                className="fill-muted text-[10px]"
-              >
-                {EVENT_LABELS[point.id]}
-              </text>
-            ))}
+            {showAllEvents ? (
+              <>
+                {championPoints.map((point) => (
+                  <text
+                    key={point.id}
+                    x={x(new Date(point.date))}
+                    y={innerH + 42}
+                    textAnchor="middle"
+                    className="fill-accent text-[10px] font-semibold"
+                  >
+                    {ALL_EVENT_LABELS[point.id]}
+                  </text>
+                ))}
+                {visibleMasterPoints.map((point) => (
+                  <text
+                    key={point.id}
+                    x={x(new Date(point.date))}
+                    y={innerH + 56}
+                    textAnchor="middle"
+                    className="fill-muted text-[9px]"
+                  >
+                    {ALL_EVENT_LABELS[point.id]}
+                  </text>
+                ))}
+              </>
+            ) : (
+              visibleEventPoints.map((point, index) => (
+                <text
+                  key={point.id}
+                  x={x(new Date(point.date))}
+                  y={innerH + (index % 2 === 0 ? 42 : 56)}
+                  textAnchor="middle"
+                  className="fill-muted text-[10px]"
+                >
+                  {EVENT_LABELS[point.id]}
+                </text>
+              ))
+            )}
 
             {points
               .filter((point) => point.kind === 'regional')

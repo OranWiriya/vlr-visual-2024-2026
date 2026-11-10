@@ -215,9 +215,19 @@ export function Footer() {
             <p className="font-serif text-xl text-ink">
               {t.nav.siteTitle}
             </p>
-            <p className="text-[11px] uppercase tracking-[0.16em] text-muted">
-              {t.footer.builtLabel(built)}
-            </p>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-muted">
+                {t.footer.builtLabel(built)}
+              </p>
+              <a
+                href="https://github.com/OranWiriya"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent"
+              >
+                GitHub
+              </a>
+            </div>
           </div>
           <p className="mt-4 max-w-3xl text-[11px] leading-relaxed text-muted">
             {t.footer.disclaimer}

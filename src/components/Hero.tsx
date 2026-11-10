@@ -75,6 +75,7 @@ export function Hero() {
             series={series}
             patches={localizedPatches}
             height={520}
+            showAllEvents
             ariaLabel={t.hero.chartAria}
             caption={t.hero.chartCaption}
           />
